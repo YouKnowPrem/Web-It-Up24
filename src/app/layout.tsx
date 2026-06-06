@@ -1,18 +1,18 @@
 import type { Metadata } from 'next';
-import { Space_Grotesk, Inter } from 'next/font/google';
+import { Outfit, Plus_Jakarta_Sans } from 'next/font/google';
 import './style.css';
 import ScrollProvider from '@/components/ScrollProvider';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
-const spaceGrotesk = Space_Grotesk({
+const outfit = Outfit({
   subsets: ['latin'],
   variable: '--font-heading',
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
 });
 
-const inter = Inter({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
   variable: '--font-body',
   weight: ['300', '400', '500', '600', '700'],
@@ -33,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable}`}>
+    <html lang="en" className={`${outfit.variable} ${plusJakartaSans.variable}`}>
       <body>
         {/* ======= PRELOADER ======= */}
         <div id="preloader">
