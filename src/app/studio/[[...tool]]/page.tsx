@@ -6,6 +6,11 @@ import config from '../../../../sanity.config';
 export const dynamic = 'force-static';
 
 export default function StudioPage() {
-  return <NextStudio config={config} />;
+  return (
+    <>
+      <script src="https://core.sanity-cdn.com/bridge.js" async type="module" />
+      <NextStudio config={config} />
+    </>
+  );
 }
 
