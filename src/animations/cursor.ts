@@ -1,17 +1,21 @@
 /**
- * cursor.js — Custom Cursor Module
+ * cursor.ts — Custom Cursor Module
  * Glowing dot cursor + golden canvas trail + sparkle burst + magnetic buttons
  */
+import gsap from 'gsap';
 
 export function initCursor() {
+  if (typeof window === 'undefined') return;
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   if (isTouchDevice) return;
 
   const dot = document.getElementById('cursor-dot');
-  const canvas = document.getElementById('cursor-canvas');
+  const canvas = document.getElementById('cursor-canvas') as HTMLCanvasElement | null;
   if (!dot || !canvas) return;
 
   const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
   let w = canvas.width = window.innerWidth;
   let h = canvas.height = window.innerHeight;
 
@@ -20,12 +24,25 @@ export function initCursor() {
   let trailX = w / 2;
   let trailY = h / 2;
 
-  const trail = [];
+  interface TrailNode {
+    x: number;
+    y: number;
+  }
+  const trail: TrailNode[] = [];
   const MAX_TRAIL = 30;
-  const sparkles = [];
+
+  interface Sparkle {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    life: number;
+    size: number;
+  }
+  const sparkles: Sparkle[] = [];
 
   // Resize (debounced)
-  let resizeTimer;
+  let resizeTimer: NodeJS.Timeout;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
@@ -34,7 +51,7 @@ export function initCursor() {
     }, 100);
   });
 
-  // Track mouse — use transform for GPU-accelerated positioning
+  // Track mouse
   window.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
@@ -43,7 +60,6 @@ export function initCursor() {
 
   // Sparkle burst on click
   window.addEventListener('mousedown', (e) => {
-    // Increase dot size slightly on click
     dot.style.transform = `translate(${mouseX - 5}px, ${mouseY - 5}px) scale(0.8)`;
     setTimeout(() => {
       dot.style.transform = `translate(${mouseX - 5}px, ${mouseY - 5}px) scale(1)`;
@@ -64,14 +80,16 @@ export function initCursor() {
   }, { passive: true });
 
   // Hover detection for cursor enlargement
-  const interactiveElements = document.querySelectorAll('a, button, .magnetic-btn, .service-card');
+  const interactiveElements = document.querySelectorAll('a, button, .magnetic-btn, .service-card, .blog-card, .contact-card');
   interactiveElements.forEach(el => {
     el.addEventListener('mouseenter', () => dot.classList.add('hovering'));
     el.addEventListener('mouseleave', () => dot.classList.remove('hovering'));
   });
 
+  let animationFrameId: number;
   // Render loop
   function render() {
+    if (!ctx || !canvas) return;
     ctx.clearRect(0, 0, w, h);
 
     // Smooth trail interpolation
@@ -101,7 +119,7 @@ export function initCursor() {
       s.x += s.vx;
       s.y += s.vy;
       s.vy += 0.08;
-      s.vx *= 0.95; // Slightly more friction
+      s.vx *= 0.95; 
       s.vy *= 0.95;
       s.life -= 0.02;
 
@@ -115,29 +133,35 @@ export function initCursor() {
       }
     }
 
-    requestAnimationFrame(render);
+    animationFrameId = requestAnimationFrame(render);
   }
 
   render();
+
+  return () => {
+    cancelAnimationFrame(animationFrameId);
+  };
 }
 
 /**
  * Magnetic button effect
  */
 export function initMagneticButtons() {
+  if (typeof window === 'undefined') return;
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   if (isTouchDevice) return;
 
-  document.querySelectorAll('.magnetic-btn').forEach(btn => {
+  document.querySelectorAll('.magnetic-btn').forEach(btnElement => {
+    const btn = btnElement as HTMLElement;
     // Add inner text wrapper if not exists for parallax effect
     if (!btn.querySelector('.magnetic-text')) {
       const text = btn.innerHTML;
       btn.innerHTML = `<span class="magnetic-text" style="display:inline-flex; align-items:center; gap:0.6rem; transition:transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); pointer-events:none;">${text}</span>`;
     }
     
-    const textSpan = btn.querySelector('.magnetic-text');
+    const textSpan = btn.querySelector('.magnetic-text') as HTMLElement | null;
 
-    btn.addEventListener('mousemove', (e) => {
+    const onMouseMove = (e: MouseEvent) => {
       const rect = btn.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
@@ -151,9 +175,9 @@ export function initMagneticButtons() {
       if (textSpan) {
         textSpan.style.transform = `translate(${(dx / rect.width) * textStrength}px, ${(dy / rect.height) * textStrength}px)`;
       }
-    });
+    };
 
-    btn.addEventListener('mouseleave', () => {
+    const onMouseLeave = () => {
       btn.style.transform = 'translate(0, 0)';
       btn.style.transition = 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
       
@@ -166,6 +190,9 @@ export function initMagneticButtons() {
         btn.style.transition = ''; 
         if (textSpan) textSpan.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
       }, 600);
-    });
+    };
+
+    btn.addEventListener('mousemove', onMouseMove);
+    btn.addEventListener('mouseleave', onMouseLeave);
   });
 }

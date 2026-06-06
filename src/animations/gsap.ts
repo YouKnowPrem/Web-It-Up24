@@ -1,5 +1,5 @@
 /**
- * gsap.js — GSAP Animations Module
+ * gsap.ts — GSAP Animations Module
  * Hero intro, scroll reveals, counters, doodle parallax, hero canvas
  */
 import gsap from 'gsap';
@@ -10,18 +10,32 @@ gsap.registerPlugin(ScrollTrigger);
 /**
  * Preloader animation sequence
  */
-export function animatePreloader() {
+export function animatePreloader(): Promise<void> {
   return new Promise((resolve) => {
+    if (typeof window === 'undefined') { resolve(); return; }
+
     const preloader = document.getElementById('preloader');
     const progressBar = document.getElementById('progress-bar');
     const rocketWrap = document.querySelector('.rocket-wrap');
-    const particlesCanvas = document.getElementById('preloader-particles');
+    const particlesCanvas = document.getElementById('preloader-particles') as HTMLCanvasElement | null;
 
     if (!preloader) { resolve(); return; }
 
     // Preloader particles
-    let pCtx, pW, pH;
-    const particles = [];
+    let pCtx: CanvasRenderingContext2D | null = null;
+    let pW = window.innerWidth;
+    let pH = window.innerHeight;
+    interface PreloaderParticle {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      size: number;
+      life: number;
+      delay: number;
+      startTime?: number;
+    }
+    const particles: PreloaderParticle[] = [];
 
     if (particlesCanvas) {
       pCtx = particlesCanvas.getContext('2d');
@@ -41,10 +55,11 @@ export function animatePreloader() {
       }
 
       function drawParticles() {
+        if (!pCtx || !preloader) return;
         pCtx.clearRect(0, 0, pW, pH);
         const now = Date.now();
         particles.forEach(p => {
-          if (now < p.startTime + p.delay) return;
+          if (p.startTime === undefined || now < p.startTime + p.delay) return;
           p.y += p.vy;
           p.x += p.vx;
           p.life -= 0.01;
@@ -53,10 +68,12 @@ export function animatePreloader() {
             p.y = pH / 2 + 80;
             p.life = 1;
           }
-          pCtx.beginPath();
-          pCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          pCtx.fillStyle = `rgba(212, 175, 55, ${p.life * 0.5})`;
-          pCtx.fill();
+          if (pCtx) {
+            pCtx.beginPath();
+            pCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            pCtx.fillStyle = `rgba(212, 175, 55, ${p.life * 0.5})`;
+            pCtx.fill();
+          }
         });
         if (preloader.style.display !== 'none') {
           requestAnimationFrame(drawParticles);
@@ -111,6 +128,7 @@ export function animatePreloader() {
  * Hero intro animations
  */
 export function animateHero() {
+  if (typeof window === 'undefined') return;
   const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
 
   // Reset transforms for smoother animation
@@ -145,10 +163,13 @@ export function animateHero() {
  * Hero gradient canvas background
  */
 export function initHeroCanvas() {
-  const canvas = document.getElementById('hero-gradient-canvas');
+  if (typeof window === 'undefined') return;
+  const canvas = document.getElementById('hero-gradient-canvas') as HTMLCanvasElement | null;
   if (!canvas) return;
 
   const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
   let w = canvas.width = window.innerWidth;
   let h = canvas.height = window.innerHeight;
 
@@ -157,13 +178,22 @@ export function initHeroCanvas() {
     h = canvas.height = window.innerHeight;
   });
 
-  const blobs = [
+  interface BlobNode {
+    x: number;
+    y: number;
+    r: number;
+    vx: number;
+    vy: number;
+    color: string;
+  }
+  const blobs: BlobNode[] = [
     { x: w * 0.3, y: h * 0.4, r: 300, vx: 0.4, vy: 0.2, color: 'rgba(212, 175, 55, 0.08)' },
     { x: w * 0.7, y: h * 0.6, r: 250, vx: -0.3, vy: -0.4, color: 'rgba(212, 175, 55, 0.05)' },
     { x: w * 0.5, y: h * 0.3, r: 200, vx: 0.2, vy: 0.5, color: 'rgba(245, 230, 163, 0.04)' },
   ];
 
   function drawCanvas() {
+    if (!ctx || !canvas) return;
     ctx.clearRect(0, 0, w, h);
     blobs.forEach(b => {
       b.x += b.vx;
@@ -184,27 +214,26 @@ export function initHeroCanvas() {
 
 /**
  * Scroll-triggered section reveals
- * Uses ScrollTrigger.batch for reliable triggering with Locomotive Scroll
  */
-export function initScrollAnimations(scrollContainer) {
+export function initScrollAnimations(scrollContainer: any) {
+  if (typeof window === 'undefined') return;
   const scroller = scrollContainer || undefined;
 
-  // Helper: create a reliable scroll animation
-  function scrollReveal(selector, fromVars, triggerSelector) {
+  function scrollReveal(selector: string, fromVars: any, triggerSelector?: string) {
     const elements = gsap.utils.toArray(selector);
     if (elements.length === 0) return;
 
     const trigger = triggerSelector || selector;
 
-    elements.forEach((el, i) => {
-      gsap.set(el, { opacity: 1, y: 0, x: 0, scale: 1 }); // ensure visible baseline
+    elements.forEach((el) => {
+      gsap.set(el as HTMLElement, { opacity: 1, y: 0, x: 0, scale: 1 });
     });
 
     gsap.fromTo(elements,
       { ...fromVars, opacity: 0 },
       {
         scrollTrigger: {
-          trigger: typeof trigger === 'string' ? document.querySelector(trigger) || elements[0] : trigger,
+          trigger: typeof trigger === 'string' ? document.querySelector(trigger) || (elements[0] as HTMLElement) : trigger,
           scroller: scroller,
           start: 'top 85%',
           once: true,
@@ -222,7 +251,8 @@ export function initScrollAnimations(scrollContainer) {
   }
 
   // Generic reveal-up elements
-  gsap.utils.toArray('.reveal-up').forEach(el => {
+  gsap.utils.toArray('.reveal-up').forEach(elElement => {
+    const el = elElement as HTMLElement;
     gsap.fromTo(el,
       { y: 60, opacity: 0 },
       {
@@ -241,7 +271,8 @@ export function initScrollAnimations(scrollContainer) {
   });
 
   // Section labels
-  gsap.utils.toArray('.section-label').forEach(el => {
+  gsap.utils.toArray('.section-label').forEach(elElement => {
+    const el = elElement as HTMLElement;
     gsap.fromTo(el,
       { x: -40, opacity: 0 },
       {
@@ -251,16 +282,9 @@ export function initScrollAnimations(scrollContainer) {
     );
   });
 
-  // Service cards - slightly more dynamic with scale
   scrollReveal('.service-card', { y: 80, scale: 0.95, stagger: 0.1, duration: 1.2 }, '.services-grid');
-
-  // Work cards
   scrollReveal('.work-card', { y: 60, scale: 0.98, stagger: 0.1, duration: 1.2 }, '.work-grid');
-
-  // Process steps
   scrollReveal('.process-step', { x: -50, opacity: 0, stagger: 0.15, duration: 1.2 }, '.process-timeline');
-
-  // Testimonial cards
   scrollReveal('.testimonial-card', { y: 50, scale: 0.95, stagger: 0.1, duration: 1.2 }, '.testimonial-track');
 
   // CTA
@@ -285,7 +309,8 @@ export function initScrollAnimations(scrollContainer) {
   );
 
   // Shimmer text effect
-  gsap.utils.toArray('.shimmer-text').forEach(el => {
+  gsap.utils.toArray('.shimmer-text').forEach(elElement => {
+    const el = elElement as HTMLElement;
     gsap.fromTo(el,
       { backgroundPosition: '200% 50%' },
       {
@@ -301,7 +326,8 @@ export function initScrollAnimations(scrollContainer) {
 /**
  * Counter animation
  */
-export function initCounters(scrollContainer) {
+export function initCounters(scrollContainer: any) {
+  if (typeof window === 'undefined') return;
   const counters = document.querySelectorAll('.counter');
   if (counters.length === 0) return;
 
@@ -315,8 +341,10 @@ export function initCounters(scrollContainer) {
     onEnter: () => {
       if (hasCounted) return;
       hasCounted = true;
-      counters.forEach(counter => {
-        const target = +counter.getAttribute('data-target');
+      counters.forEach(counterElement => {
+        const counter = counterElement as HTMLElement;
+        const targetAttr = counter.getAttribute('data-target');
+        const target = targetAttr ? +targetAttr : 0;
         gsap.fromTo(counter, 
           { innerHTML: 0 },
           {
@@ -335,17 +363,19 @@ export function initCounters(scrollContainer) {
  * Doodle parallax on mouse move
  */
 export function initDoodleParallax() {
+  if (typeof window === 'undefined') return;
   const doodles = document.querySelectorAll('.doodle');
   if (doodles.length === 0) return;
 
-  const isTouchDevice = 'ontouchstart' in window;
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   if (isTouchDevice) return;
 
-  window.addEventListener('mousemove', (e) => {
+  const onMouseMove = (e: MouseEvent) => {
     const mx = (e.clientX / window.innerWidth - 0.5) * 2;
     const my = (e.clientY / window.innerHeight - 0.5) * 2;
 
-    doodles.forEach((d, i) => {
+    doodles.forEach((dElement, i) => {
+      const d = dElement as HTMLElement;
       const speed = (i + 1) * 8;
       gsap.to(d, {
         x: mx * speed,
@@ -355,5 +385,7 @@ export function initDoodleParallax() {
         overwrite: 'auto',
       });
     });
-  }, { passive: true });
+  };
+
+  window.addEventListener('mousemove', onMouseMove, { passive: true });
 }

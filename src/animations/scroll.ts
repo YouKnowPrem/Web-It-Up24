@@ -1,16 +1,19 @@
 /**
- * scroll.js — Locomotive Scroll + ScrollTrigger Integration
+ * scroll.ts — Locomotive Scroll + ScrollTrigger Integration
  * Smooth scrolling, parallax, and scroll-based UI changes
  */
-import LocomotiveScroll from 'locomotive-scroll';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-let locoScroll = null;
+let locoScroll: any = null;
 
-export function initSmoothScroll() {
+export async function initSmoothScroll() {
+  if (typeof window === 'undefined') return null;
+
+  const LocomotiveScroll = (await import('locomotive-scroll')).default;
+
   const container = document.querySelector('[data-scroll-container]');
   if (!container) return null;
 
@@ -18,7 +21,7 @@ export function initSmoothScroll() {
     el: container,
     smooth: true,
     multiplier: 1,
-    lerp: 0.06, // Reduced from 0.08 for a more premium, buttery-smooth scroll
+    lerp: 0.06, // Premium buttery scroll
     class: 'is-revealed',
     smartphone: { smooth: false },
     tablet: { smooth: true, breakpoint: 1024 },
@@ -29,9 +32,11 @@ export function initSmoothScroll() {
 
   ScrollTrigger.scrollerProxy(container, {
     scrollTop(value) {
-      return arguments.length
-        ? locoScroll.scrollTo(value, 0, 0)
-        : locoScroll.scroll.instance.scroll.y;
+      if (arguments.length && value !== undefined) {
+        locoScroll?.scrollTo(value, 0, 0);
+        return value;
+      }
+      return locoScroll?.scroll?.instance?.scroll?.y || 0;
     },
     getBoundingClientRect() {
       return {
@@ -41,13 +46,13 @@ export function initSmoothScroll() {
         height: window.innerHeight,
       };
     },
-    pinType: container.style.transform ? 'transform' : 'fixed',
+    pinType: (container as HTMLElement).style.transform ? 'transform' : 'fixed',
   });
 
   // Navbar scroll state
   const navbar = document.getElementById('navbar');
   if (navbar) {
-    locoScroll.on('scroll', (args) => {
+    locoScroll.on('scroll', (args: any) => {
       if (args.scroll.y > 80) {
         navbar.classList.add('scrolled');
       } else {
@@ -60,15 +65,18 @@ export function initSmoothScroll() {
   document.querySelectorAll('a[data-scroll-to]').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
-      const target = document.querySelector(link.getAttribute('href'));
-      if (target) {
-        locoScroll.scrollTo(target, { offset: -80 });
+      const href = link.getAttribute('href');
+      if (href) {
+        const target = document.querySelector(href);
+        if (target) {
+          locoScroll?.scrollTo(target, { offset: -80 });
+        }
       }
     });
   });
 
   // Refresh
-  ScrollTrigger.addEventListener('refresh', () => locoScroll.update());
+  ScrollTrigger.addEventListener('refresh', () => locoScroll?.update());
   setTimeout(() => ScrollTrigger.refresh(), 500);
 
   return locoScroll;
@@ -79,5 +87,6 @@ export function getLocoScroll() {
 }
 
 export function getScrollContainer() {
+  if (typeof window === 'undefined') return null;
   return document.querySelector('[data-scroll-container]');
 }
