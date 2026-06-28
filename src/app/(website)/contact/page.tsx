@@ -172,19 +172,27 @@ export default function ContactPage() {
                     className="btn btn-primary submit-btn magnetic-btn"
                     disabled={state.submitting}
                   >
-                    <span>{state.submitting ? 'Sending...' : 'Send Message'}</span>
-                    {state.submitting ? (
-                      <div className="spinner" style={{
-                        width: '18px',
-                        height: '18px',
-                        border: '2px solid rgba(11, 11, 11, 0.3)',
-                        borderTopColor: 'var(--bg)',
-                        borderRadius: '50%',
-                        animation: 'spin 0.8s linear infinite'
-                      }} />
-                    ) : (
-                      <FiSend style={{ fontSize: '0.9rem' }} />
-                    )}
+                    <span className="magnetic-text" style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.6rem',
+                      transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                      pointerEvents: 'none'
+                    }}>
+                      <span>{state.submitting ? 'Sending...' : 'Send Message'}</span>
+                      {state.submitting ? (
+                        <div className="spinner" style={{
+                          width: '18px',
+                          height: '18px',
+                          border: '2px solid rgba(11, 11, 11, 0.3)',
+                          borderTopColor: 'var(--bg)',
+                          borderRadius: '50%',
+                          animation: 'spin 0.8s linear infinite'
+                        }} />
+                      ) : (
+                        <FiSend style={{ fontSize: '0.9rem' }} />
+                      )}
+                    </span>
                   </button>
                 </form>
               </div>
@@ -204,8 +212,16 @@ export default function ContactPage() {
                     className="btn btn-outline magnetic-btn"
                     onClick={handleReset}
                   >
-                    <span>Send another message</span>
-                    <FiArrowRight />
+                    <span className="magnetic-text" style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.6rem',
+                      transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                      pointerEvents: 'none'
+                    }}>
+                      <span>Send another message</span>
+                      <FiArrowRight />
+                    </span>
                   </button>
                 </div>
               </div>
