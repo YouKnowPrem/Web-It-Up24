@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Outfit, Plus_Jakarta_Sans } from 'next/font/google';
-import Script from 'next/script';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -31,22 +30,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${outfit.variable} ${plusJakartaSans.variable}`}>
+      <head>
+        {/* Google tag (gtag.js) */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-5R5T3YHNQX"></script>
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-5R5T3YHNQX');
+          `
+        }} />
+      </head>
       <body style={{ margin: 0, padding: 0 }}>
         {children}
       </body>
-      <Script
-        src="https://www.googletagmanager.com/gtag/js?id=G-5R5T3YHNQX"
-        strategy="afterInteractive"
-      />
-      <Script id="google-analytics" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-
-          gtag('config', 'G-5R5T3YHNQX');
-        `}
-      </Script>
     </html>
   );
 }
