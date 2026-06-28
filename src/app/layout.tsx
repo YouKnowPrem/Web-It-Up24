@@ -33,14 +33,15 @@ export default function RootLayout({
       <head>
         {/* Google tag (gtag.js) */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-5R5T3YHNQX"></script>
-        <script dangerouslySetInnerHTML={{
-          __html: `
+        <script>
+          {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
+
             gtag('config', 'G-5R5T3YHNQX');
-          `
-        }} />
+          `}
+        </script>
       </head>
       <body style={{ margin: 0, padding: 0 }}>
         {children}
