@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { FiMail, FiMapPin, FiPhone, FiSend, FiCheck, FiArrowRight } from 'react-icons/fi';
+import { useForm, ValidationError } from '@formspree/react';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -10,24 +11,17 @@ export default function ContactPage() {
     project: '',
     message: ''
   });
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
+  
+  const [state, handleSubmit, reset] = useForm('mykqjakg');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) return;
-
-    setStatus('submitting');
-    
-    // Simulate API request
-    setTimeout(() => {
-      setStatus('success');
-      setFormData({ name: '', email: '', project: '', message: '' });
-    }, 1500);
+  const handleReset = () => {
+    reset();
+    setFormData({ name: '', email: '', project: '', message: '' });
   };
 
   return (
@@ -83,7 +77,7 @@ export default function ContactPage() {
 
           {/* Right Side: Contact Form */}
           <div className="contact-form-container" data-scroll data-scroll-speed="0.4">
-            {status === 'success' ? (
+            {state.succeeded ? (
               <div className="success-screen">
                 <div className="success-icon-wrap">
                   <FiCheck />
@@ -92,7 +86,7 @@ export default function ContactPage() {
                 <p>Thank you for reaching out. Our collective will review your message and reply within 24 hours.</p>
                 <button 
                   className="btn btn-outline magnetic-btn"
-                  onClick={() => setStatus('idle')}
+                  onClick={handleReset}
                 >
                   <span>Send another message</span>
                   <FiArrowRight />
@@ -112,6 +106,7 @@ export default function ContactPage() {
                     required
                   />
                   <label htmlFor="name" className="form-label">Your Name *</label>
+                  <ValidationError prefix="Name" field="name" errors={state.errors} className="validation-error" />
                 </div>
 
                 <div className="form-group">
@@ -126,6 +121,7 @@ export default function ContactPage() {
                     required
                   />
                   <label htmlFor="email" className="form-label">Your Email *</label>
+                  <ValidationError prefix="Email" field="email" errors={state.errors} className="validation-error" />
                 </div>
 
                 <div className="form-group">
@@ -139,6 +135,7 @@ export default function ContactPage() {
                     placeholder="E-commerce website, Branding..."
                   />
                   <label htmlFor="project" className="form-label">Project Type (Optional)</label>
+                  <ValidationError prefix="Project" field="project" errors={state.errors} className="validation-error" />
                 </div>
 
                 <div className="form-group">
@@ -154,15 +151,16 @@ export default function ContactPage() {
                     required
                   />
                   <label htmlFor="message" className="form-label">How can we help? *</label>
+                  <ValidationError prefix="Message" field="message" errors={state.errors} className="validation-error" />
                 </div>
 
                 <button 
                   type="submit" 
                   className="btn btn-primary submit-btn magnetic-btn"
-                  disabled={status === 'submitting'}
+                  disabled={state.submitting}
                 >
-                  <span>{status === 'submitting' ? 'Sending...' : 'Send Message'}</span>
-                  {status === 'submitting' ? (
+                  <span>{state.submitting ? 'Sending...' : 'Send Message'}</span>
+                  {state.submitting ? (
                     <div className="spinner" style={{
                       width: '18px',
                       height: '18px',
@@ -181,12 +179,20 @@ export default function ContactPage() {
         </div>
       </div>
       
-      {/* Dynamic inline styles for spinner animation */}
+      {/* Dynamic inline styles for spinner and validation error animation */}
       <style jsx>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+        .validation-error {
+          color: #ff4a4a;
+          font-size: 0.8rem;
+          margin-top: 0.5rem;
+          display: block;
+          font-weight: 500;
         }
       `}</style>
     </section>
   );
 }
+
